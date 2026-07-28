@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Digital Clock</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  :root{
+    --bg:#0b0f1a; --bg2:#131a2b; --fg:#e8edff; --muted:#7e89a8;
+    --accent:#4d9fff; --glow:0 0 30px rgba(77,159,255,.45);
+    --card:rgba(255,255,255,.04); --border:rgba(255,255,255,.09);
+    --font:'Orbitron',sans-serif;
+  }
+  /* ---------- THEMES ---------- */
+  body[data-theme="neon"]{
+    --bg:#08020f; --bg2:#16032b; --fg:#ff4de3; --muted:#8b5fb0;
+    --accent:#00f0ff; --glow:0 0 12px #ff4de3, 0 0 42px rgba(255,77,227,.7);
+    --card:rgba(255,77,227,.06); --border:rgba(255,77,227,.25);
+  }
+  body[data-theme="terminal"]{
+    --bg:#020604; --bg2:#03150a; --fg:#37ff8b; --muted:#1e7a45;
+    --accent:#37ff8b; --glow:0 0 10px rgba(55,255,139,.75);
+    --card:rgba(55,255,139,.05); --border:rgba(55,255,139,.25);
+    --font:'Share Tech Mono',monospace;
+  }
+  body[data-theme="sunrise"]{
+    --bg:#2b0f30; --bg2:#ff7a45; --fg:#fff4e6; --muted:#ffc9a3;
+    --accent:#ffd166; --glow:0 0 34px rgba(255,209,102,.5);
+    --card:rgba(255,255,255,.1); --border:rgba(255,255,255,.22);
+  }
+  body[data-theme="paper"]{
+    --bg:#f2f1ec; --bg2:#e2e0d8; --fg:#1b1b1a; --muted:#8b8880;
+    --accent:#c2410c; --glow:none;
+    --card:rgba(0,0,0,.035); --border:rgba(0,0,0,.1);
+    --font:'Inter',sans-serif;
+  }
+
+  body{
+    min-height:100vh; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:28px; padding:24px;
+    background:radial-gradient(circle at 50% 15%,var(--bg2),var(--bg) 70%);
+    color:var(--fg); font-family:var(--font);
+    transition:background .5s ease, color .5s ease;
+  }
+
+  .clock{
+    background:var(--card); border:1px solid var(--border);
+    border-radius:24px; padding:44px 56px; text-align:center;
+    backdrop-filter:blur(12px);
+    box-shadow:0 24px 60px rgba(0,0,0,.35);
+    transition:all .5s ease;
+  }
+  .time{
+    font-size:clamp(3rem,13vw,7rem); font-weight:900; line-height:1;
+    letter-spacing:.04em; text-shadow:var(--glow);
+    display:flex; align-items:baseline; justify-content:center; gap:.04em;
+  }
+  .colon{ animation:blink 1s steps(1,end) infinite; }
+  @keyframes blink{ 50%{opacity:.2} }
+  .sec{ font-size:.38em; color:var(--accent); margin-left:.25em; }
+  .ampm{ font-size:.24em; color:var(--accent); margin-left:.3em; letter-spacing:.15em; }
+  .date{
+    margin-top:16px; font-size:clamp(.85rem,2.4vw,1.15rem);
+    letter-spacing:.28em; text-transform:uppercase; color:var(--muted);
+  }
+
+  .controls{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+  button{
+    font-family:var(--font); font-size:.72rem; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--fg); cursor:pointer;
+    background:var(--card); border:1px solid var(--border);
+    padding:10px 18px; border-radius:999px; transition:all .25s ease;
+  }
+  button:hover{ border-color:var(--accent); color:var(--accent); }
+  button.active{ background:var(--accent); border-color:var(--accent); color:var(--bg); }
+  .row-label{ width:100%; text-align:center; font-size:.62rem;
+    letter-spacing:.3em; color:var(--muted); text-transform:uppercase; }
+</style>
+</head>
+<body data-theme="midnight">
+
+  <div class="clock">
+    <div class="time" id="time"></div>
+    <div class="date" id="date"></div>
+  </div>
+
+  <div class="controls">
+    <div class="row-label">Theme</div>
+    <button data-theme-btn="midnight" class="active">Midnight</button>
+    <button data-theme-btn="neon">Neon</button>
+    <button data-theme-btn="terminal">Terminal</button>
+    <button data-theme-btn="sunrise">Sunrise</button>
+    <button data-theme-btn="paper">Paper</button>
+  </div>
+
+  <div class="controls">
+    <button id="fmt">24-Hour</button>
+    <button id="secBtn" class="active">Seconds</button>
+  </div>
+
+<script>
+  let use24 = false, showSec = true;
+  const pad = n => String(n).padStart(2,'0');
+  const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const MONTHS = ['January','February','March','April','May','June','July',
+                  'August','September','October','November','December'];
+
+  function tick(){
+    const d = new Date();
+    let h = d.getHours();
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    if(!use24){ h = h % 12 || 12; }
+
+    document.getElementById('time').innerHTML =
+      `<span>${use24 ? pad(h) : h}</span><span class="colon">:</span><span>${pad(d.getMinutes())}</span>` +
+      (showSec ? `<span class="sec">${pad(d.getSeconds())}</span>` : '') +
+      (use24 ? '' : `<span class="ampm">${ampm}</span>`);
+
+    document.getElementById('date').textContent =
+      `${DAYS[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+  }
+
+  document.querySelectorAll('[data-theme-btn]').forEach(b => {
+    b.onclick = () => {
+      document.body.dataset.theme = b.dataset.themeBtn;
+      document.querySelectorAll('[data-theme-btn]').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+    };
+  });
+
+  document.getElementById('fmt').onclick = e => {
+    use24 = !use24;
+    e.target.textContent = use24 ? '12-Hour' : '24-Hour';
+    e.target.classList.toggle('active', use24);
+    tick();
+  };
+
+  document.getElementById('secBtn').onclick = e => {
+    showSec = !showSec;
+    e.target.classList.toggle('active', showSec);
+    tick();
+  };
+
+  tick();
+  setInterval(tick, 1000);
+</script>
+</body>
+</html>
